@@ -84,3 +84,45 @@ export async function redirectShortUrl(req, res) {
         console.log('Erro ao redirecionar para a url', e);
     }
 }
+
+export async function deleteUrl(req, res) {
+    const {authorization } = req.headers;
+    const token = authorization?.replace('Bearer', '').trim();
+
+    const {id} = req.params;
+
+    if (!token) return res.sendStatus(401);
+
+    const querySearch = `
+    SELECT urls.*, "shortUrls".id as "shortUrlId"
+    FROM urls
+    JOIN "shortUrls" ON "shortUrls"."urlId" = urls.id
+    WHERE urls.id = $1 AND urls."userId" = $2
+    `;
+
+    const queryUrlDelete = `
+    DELETE FROM urls
+    WHERE urls.id = $1
+    `;
+
+    const queryShortUrlDelete = `
+    DELETE FROM "shortUrls"
+    WHERE "shortUrls".id = $1
+    `;
+
+    try {
+        const user = jwt.verify(token, secretKey);
+
+        const urlSearch = await db.query(querySearch, [id, user.id]);
+
+        if (urlSearch.rowCount === 0) return res.sendStatus(404);
+        
+        await db.query(queryShortUrlDelete, [urlSearch.rows[0].shortUrlId]);
+        await db.query(queryUrlDelete, [id]);
+
+        res.sendStatus(204);
+    } catch (e) {
+        res.status(500).send(e);
+        console.log('Erro ao deletar a url', e);
+    }
+}
