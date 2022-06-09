@@ -30,3 +30,25 @@ export async function generateShortUrl(req, res) {
         console.log('Erro ao postar a shortUrl', e);
     }
 }
+
+export async function getUrl(req, res) {
+    const {id} = req.params;
+
+    const query = `
+    SELECT u.id, su."shortUrl", u.url
+    FROM urls u
+    JOIN "shortUrls" su ON su."urlId" = u.id
+    WHERE u.id = $1
+    `;
+
+    try {
+        const urlSearch = await db.query(query, [id]);
+
+        if (urlSearch.rowCount === 0) return res.sendStatus(404);
+
+        res.status(200).send(urlSearch.rows[0]);
+    } catch (e) {
+        res.status(500).send(e);
+        console.log('Erro ao buscar a url', e);
+    }
+}
