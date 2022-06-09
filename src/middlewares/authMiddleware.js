@@ -1,6 +1,6 @@
 import db from '../database.js';
 
-import { signUpSchema } from '../schemas/authSchema.js';
+import { signUpSchema, signInSchema } from '../schemas/authSchema.js';
 
 export async function signUpValidation(req, res, next) {
     const {body} = req;
@@ -19,4 +19,14 @@ export async function signUpValidation(req, res, next) {
         res.sendStatus(500);
         console.log('Erro ao verificar usuário no banco');
     }
+}
+
+export async function signInValidation(req, res, next) {
+    const {body} = req;
+
+    const validation = signInSchema.validate(body);
+
+    if (validation.error) return res.status(422).send(validation.error);
+
+    next();
 }
