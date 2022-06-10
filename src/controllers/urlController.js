@@ -115,7 +115,7 @@ export async function deleteUrl(req, res) {
 
         const urlSearch = await db.query(querySearch, [id, user.id]);
 
-        if (urlSearch.rowCount === 0) return res.sendStatus(404);
+        if (urlSearch.rowCount === 0) return res.sendStatus(401);
         
         await db.query(queryShortUrlDelete, [urlSearch.rows[0].shortUrlId]);
         await db.query(queryUrlDelete, [id]);
