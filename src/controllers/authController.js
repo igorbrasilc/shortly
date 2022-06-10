@@ -32,6 +32,6 @@ export async function signIn(req, res) {
         }
     } catch (e) {
         res.sendStatus(500);
-        console.log('Erro ao buscar usuário no banco');
+        console.log('Erro ao buscar usuário no banco', e);
     }
 }

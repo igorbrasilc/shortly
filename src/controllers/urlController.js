@@ -1,4 +1,3 @@
-import db from '../database.js';
 import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 import 'dotenv/config';
@@ -36,15 +35,8 @@ export async function generateShortUrl(req, res) {
 export async function getUrl(req, res) {
     const {id} = req.params;
 
-    const query = `
-    SELECT u.id, su."shortUrl", u.url
-    FROM urls u
-    JOIN "shortUrls" su ON su."urlId" = u.id
-    WHERE u.id = $1
-    `;
-
     try {
-        const urlSearch = await db.query(query, [id]);
+        const urlSearch = await urlRepository.getUrlAndShortById(id);
 
         if (urlSearch.rowCount === 0) return res.sendStatus(404);
 
@@ -58,27 +50,14 @@ export async function getUrl(req, res) {
 export async function redirectShortUrl(req, res) {
     const {shortUrl} = req.params;
 
-    const queryUrlSearch = `
-    SELECT u.* 
-    FROM urls u
-    JOIN "shortUrls" su ON su."urlId" = u.id
-    WHERE su."shortUrl" = $1 
-    `;
-
-    const queryIncrementView = `
-    UPDATE urls
-    SET views = $1
-    WHERE id = $2
-    `;
-
     try {
-        const urlSearch = await db.query(queryUrlSearch, [shortUrl]);
+        const urlSearch = await urlRepository.getUrlAndShortByShort(shortUrl);
 
         if (urlSearch.rowCount === 0) return res.sendStatus(404);
 
         const increment = urlSearch.rows[0].views + 1;
 
-        const viewIncrement = await db.query(queryIncrementView, [increment, urlSearch.rows[0].id]);
+        const viewIncrement = await urlRepository.incrementViews(increment, urlSearch.rows[0].id);
 
         res.redirect(urlSearch.rows[0].url);
     } catch (e) {
@@ -95,32 +74,15 @@ export async function deleteUrl(req, res) {
 
     if (!token) return res.sendStatus(401);
 
-    const querySearch = `
-    SELECT urls.*, "shortUrls".id as "shortUrlId"
-    FROM urls
-    JOIN "shortUrls" ON "shortUrls"."urlId" = urls.id
-    WHERE urls.id = $1 AND urls."userId" = $2
-    `;
-
-    const queryUrlDelete = `
-    DELETE FROM urls
-    WHERE urls.id = $1
-    `;
-
-    const queryShortUrlDelete = `
-    DELETE FROM "shortUrls"
-    WHERE "shortUrls".id = $1
-    `;
-
     try {
         const user = jwt.verify(token, secretKey);
 
-        const urlSearch = await db.query(querySearch, [id, user.id]);
+        const urlSearch = await urlRepository.searchByUrlAndUser(id, user.id);
 
         if (urlSearch.rowCount === 0) return res.sendStatus(401);
         
-        await db.query(queryShortUrlDelete, [urlSearch.rows[0].shortUrlId]);
-        await db.query(queryUrlDelete, [id]);
+        await urlRepository.deleteShortUrl(urlSearch.rows[0].shortUrlId);
+        await urlRepository.deleteUrl(id);
 
         res.sendStatus(204);
     } catch (e) {
