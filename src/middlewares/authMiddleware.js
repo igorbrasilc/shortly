@@ -15,7 +15,7 @@ export async function signUpValidation(req, res, next) {
 
         next();
     } catch (e) {
-        res.sendStatus(500);
+        res.status(500).send(e);
         console.log('Erro ao verificar usuário no banco');
     }
 }

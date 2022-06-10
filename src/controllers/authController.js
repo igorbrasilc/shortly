@@ -12,7 +12,7 @@ export async function signUp(req, res) {
 
         res.sendStatus(201);
     } catch (e) {
-        res.sendStatus(500);
+        res.status(500).send(e);
         console.log('Erro ao postar usuário no banco');
     }
 }
@@ -31,7 +31,7 @@ export async function signIn(req, res) {
             res.status(401).send('Senha incompatível ou usuário não existe');
         }
     } catch (e) {
-        res.sendStatus(500);
+        res.status(500).send(e);
         console.log('Erro ao buscar usuário no banco', e);
     }
 }
