@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { nanoid } from 'nanoid';
 import 'dotenv/config';
 
+import { urlRepository } from '../repositories/urlRepository.js';
+
 const secretKey = process.env.JWT_SECRET;
 
 export async function generateShortUrl(req, res) {
@@ -16,13 +18,13 @@ export async function generateShortUrl(req, res) {
     try {
         const user = jwt.verify(token, secretKey);
 
-        await db.query('INSERT INTO urls ("userId", url) VALUES ($1, $2)', [user.id, url]);
+        await urlRepository.insertUrl(user.id, url);
 
-        const urlPosted = await db.query('SELECT * FROM urls WHERE url = $1 AND "userId" = $2', [url, user.id]);
+        const urlPosted = await urlRepository.searchUrl(url, user.id);
 
         const shortUrl = nanoid(10);
         
-        await db.query('INSERT INTO "shortUrls" ("shortUrl", "urlId") VALUES ($1, $2)', [shortUrl, urlPosted.rows[0].id]);
+        await urlRepository.insertShortUrl(shortUrl, urlPosted.rows[0].id);
 
         res.send({shortUrl});
     } catch (e) {

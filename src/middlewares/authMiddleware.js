@@ -1,6 +1,5 @@
-import db from '../database.js';
-
 import { signUpSchema, signInSchema } from '../schemas/authSchema.js';
+import { authRepository } from '../repositories/authRepository.js';
 
 export async function signUpValidation(req, res, next) {
     const {body} = req;
@@ -10,7 +9,7 @@ export async function signUpValidation(req, res, next) {
     if(validation.error) return res.status(422).send(validation.error);
 
     try {
-        const emailSearch = await db.query('SELECT * FROM users WHERE email = $1', [body.email]);
+        const emailSearch = await authRepository.searchEmail(body.email);
 
         if (emailSearch.rowCount > 0) return res.status(409).send('Email já cadastrado!');
 
